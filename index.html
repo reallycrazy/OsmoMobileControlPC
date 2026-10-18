@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Osmo Control PC</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">◎</span>
+      <div>
+        <h1>Osmo Control PC</h1>
+        <p>Control Bluetooth + seguimiento por webcam para DJI Osmo Mobile</p>
+      </div>
+    </div>
+    <div class="status">
+      <span id="batt" class="pill hidden">🔋 —</span>
+      <span id="att" class="pill hidden mono">Y 0° · P 0° · R 0°</span>
+      <span id="statusDot" class="dot"></span>
+      <span id="statusText">Desconectado</span>
+      <button id="btnConnect" class="primary">Conectar gimbal</button>
+      <button id="btnDisconnect" class="ghost hidden">Desconectar</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- ================= VIDEO ================= -->
+    <section class="stage">
+      <div id="videoWrap" class="video-wrap">
+        <video id="video" playsinline muted></video>
+        <canvas id="overlay"></canvas>
+        <div id="videoHint" class="video-hint">
+          <p>Elegí una cámara y presioná <b>Iniciar cámara</b></p>
+        </div>
+        <div id="recBadge" class="rec-badge hidden">● REC <span id="recTime">00:00</span></div>
+        <div id="modeBadge" class="mode-badge">Seguimiento: apagado</div>
+      </div>
+      <div class="stage-bar">
+        <select id="camSelect" title="Cámara"></select>
+        <button id="btnCam">Iniciar cámara</button>
+        <label class="chk"><input type="checkbox" id="chkMirror" /> Espejo</label>
+        <span class="spacer"></span>
+        <div class="seg" id="modeSeg">
+          <button data-mode="off" class="on">Apagado</button>
+          <button data-mode="face">Cara</button>
+          <button data-mode="object">Persona/objeto</button>
+          <button data-mode="region">Región</button>
+        </div>
+        <select id="objClass" class="hidden" title="Tipo de objeto">
+          <option value="person">persona</option>
+          <option value="cat">gato</option>
+          <option value="dog">perro</option>
+          <option value="sports ball">pelota</option>
+          <option value="bottle">botella</option>
+          <option value="cup">taza</option>
+          <option value="cell phone">celular</option>
+          <option value="car">auto</option>
+          <option value="bicycle">bicicleta</option>
+          <option value="">cualquiera</option>
+        </select>
+      </div>
+      <p id="trackHelp" class="help">Con seguimiento de <b>Región</b>, arrastrá un rectángulo sobre el video. Con <b>Cara</b> o <b>Persona</b>, hacé click sobre la caja que quieras seguir.</p>
+    </section>
+
+    <!-- ================= PANEL ================= -->
+    <aside class="panel">
+      <div class="card">
+        <h2>Control manual</h2>
+        <div class="manual">
+          <div id="joy" class="joy" title="Arrastrá para mover">
+            <div class="joy-ring"></div>
+            <div id="joyKnob" class="joy-knob"></div>
+          </div>
+          <div class="hw-buttons">
+            <button id="btnMode" class="hw" title="Cambiar modo de seguimiento (M)"><span>M</span><small>Modo</small></button>
+            <button id="btnRec" class="hw rec" title="Grabar video de la webcam (R)"><span>●</span><small>Grabar</small></button>
+            <button id="btnCenter" class="hw" title="Click: centrar · Mantener: bloquear (C)"><span>⟲</span><small>Centrar</small></button>
+          </div>
+        </div>
+        <div class="row">
+          <label>Roll</label>
+          <input type="range" id="rollSlider" min="-1" max="1" step="0.01" value="0" />
+        </div>
+        <div class="row small-btns">
+          <button id="btnSnap" class="ghost">📷 Foto</button>
+          <button id="btnStop" class="ghost">■ Detener</button>
+          <button id="btnTest" class="ghost" title="Gira a izquierda y derecha para comprobar el sentido">↔ Probar</button>
+        </div>
+        <details class="keys">
+          <summary>Atajos de teclado y joystick</summary>
+          <ul>
+            <li><kbd>←</kbd><kbd>→</kbd> / <kbd>A</kbd><kbd>D</kbd> paneo · <kbd>↑</kbd><kbd>↓</kbd> / <kbd>W</kbd><kbd>S</kbd> inclinación</li>
+            <li><kbd>Q</kbd><kbd>E</kbd> roll · <kbd>Shift</kbd> rápido · <kbd>Espacio</kbd> detener</li>
+            <li><kbd>C</kbd> centrar · <kbd>T</kbd> seguimiento on/off · <kbd>M</kbd> modo</li>
+            <li><kbd>R</kbd> grabar · <kbd>P</kbd> foto</li>
+            <li>Joystick/gamepad USB: stick izq. = mover, stick der. X = roll, A = centrar, B = modo, X = grabar</li>
+          </ul>
+        </details>
+      </div>
+
+      <div class="card">
+        <h2>Ajustes</h2>
+        <div class="row"><label>Velocidad manual</label><input type="range" id="manSpeed" min="5" max="180" value="60" /><output id="manSpeedOut">60°/s</output></div>
+        <div class="row"><label>Sensibilidad seguimiento</label><input type="range" id="kp" min="10" max="250" value="80" /><output id="kpOut">80</output></div>
+        <div class="row"><label>Suavizado</label><input type="range" id="smooth" min="0" max="0.95" step="0.05" value="0.6" /><output id="smoothOut">0.6</output></div>
+        <div class="row"><label>Vel. máx. seguimiento</label><input type="range" id="trackMax" min="5" max="180" value="60" /><output id="trackMaxOut">60°/s</output></div>
+        <div class="row"><label>Zona muerta</label><input type="range" id="dead" min="0" max="0.3" step="0.01" value="0.06" /><output id="deadOut">0.06</output></div>
+        <div class="row"><label>Encuadre vertical</label><input type="range" id="frameY" min="0.2" max="0.8" step="0.01" value="0.45" /><output id="frameYOut">0.45</output></div>
+        <div class="row checks">
+          <label class="chk"><input type="checkbox" id="invYaw" /> Invertir paneo</label>
+          <label class="chk"><input type="checkbox" id="invPitch" /> Invertir inclinación</label>
+          <label class="chk"><input type="checkbox" id="trackPitch" checked /> Seguir en vertical</label>
+        </div>
+      </div>
+
+      <div class="card">
+        <details>
+          <summary><h2 class="inline">Avanzado / diagnóstico</h2></summary>
+          <div class="row"><label>Filtro de nombre BLE</label><input id="namePrefix" type="text" placeholder="(vacío = mostrar todos)" /></div>
+          <div class="row"><label>Servicio</label><input id="uuidSvc" type="text" class="mono" value="fff0" /></div>
+          <div class="row"><label>Notificación</label><input id="uuidNotify" type="text" class="mono" value="fff4" /></div>
+          <div class="row"><label>Escritura</label><input id="uuidWrite" type="text" class="mono" value="fff5" /></div>
+          <div class="row"><label>Emisor / Receptor</label><input id="addrSender" type="text" class="mono short" value="02" /><input id="addrReceiver" type="text" class="mono short" value="04" /></div>
+          <div class="row"><label>Ir a ángulo (Y,P,R °)</label><input id="absAngle" type="text" class="mono" value="0,0,0" /><button id="btnAbs" class="ghost">Ir</button></div>
+          <div class="row"><label>Paquete DUML</label><input id="rawSet" class="mono short" value="04" title="cmd_set" /><input id="rawCmd" class="mono short" value="0c" title="cmd_id" /><input id="rawPayload" class="mono" value="00 00 00 00 00 00 80 05" title="payload hex" /><button id="btnRaw" class="ghost">Enviar</button></div>
+          <div class="row checks">
+            <label class="chk"><input type="checkbox" id="logTx" /> Ver TX</label>
+            <label class="chk"><input type="checkbox" id="logRx" /> Ver RX</label>
+            <button id="btnClearLog" class="ghost">Limpiar</button>
+          </div>
+        </details>
+        <pre id="log" class="log"></pre>
+      </div>
+    </aside>
+  </main>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
